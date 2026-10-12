@@ -1,0 +1,9 @@
+Mori Pet Player portable build
+
+解壓後直接執行 mori-pet-player.exe，不會安裝 Mori Desktop。
+
+Windows 10 1803 以上通常已內建 Microsoft Edge WebView2 Runtime。若程式
+無法啟動，請先安裝 WebView2 Runtime，再重新執行。
+
+角色包與設定會保存在目前 Windows 使用者的應用程式資料中，不會寫進這個
+portable ZIP 資料夾。

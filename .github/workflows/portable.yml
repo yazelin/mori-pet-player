@@ -1,0 +1,106 @@
+name: Build portable apps
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux
+          - os: macos-15
+            platform: macos
+            architecture: arm64
+          - os: macos-15-intel
+            platform: macos
+            architecture: x64
+          - os: windows-latest
+            platform: windows
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install Linux build dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            librsvg2-dev \
+            libayatana-appindicator3-dev \
+            libfuse2
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build Linux AppImage
+        if: matrix.platform == 'linux'
+        run: npx tauri build --bundles appimage
+
+      - name: Build macOS app bundle
+        if: matrix.platform == 'macos'
+        run: npx tauri build --bundles app
+
+      - name: Zip macOS app bundle
+        if: matrix.platform == 'macos'
+        run: ditto -c -k --sequesterRsrc --keepParent "src-tauri/target/release/bundle/macos/Mori Pet Player.app" Mori-Pet-Player-macos-${{ matrix.architecture }}-portable.zip
+
+      - name: Build Windows executable
+        if: matrix.platform == 'windows'
+        run: npx tauri build --no-bundle
+
+      - name: Zip Windows portable app
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path portable-windows | Out-Null
+          Copy-Item src-tauri/target/release/mori-pet-player.exe portable-windows/
+          Copy-Item docs/portable-windows.txt portable-windows/README.txt
+          Compress-Archive -Path portable-windows/* -DestinationPath Mori-Pet-Player-windows-x64-portable.zip
+
+      - name: Upload Linux AppImage
+        if: matrix.platform == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mori-Pet-Player-linux-x64-portable
+          path: src-tauri/target/release/bundle/appimage/*.AppImage
+          if-no-files-found: error
+
+      - name: Upload macOS app bundle ZIP
+        if: matrix.platform == 'macos'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mori-Pet-Player-macos-${{ matrix.architecture }}-portable
+          path: Mori-Pet-Player-macos-${{ matrix.architecture }}-portable.zip
+          if-no-files-found: error
+
+      - name: Upload Windows portable ZIP
+        if: matrix.platform == 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mori-Pet-Player-windows-x64-portable
+          path: Mori-Pet-Player-windows-x64-portable.zip
+          if-no-files-found: error
