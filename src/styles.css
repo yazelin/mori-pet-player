@@ -76,7 +76,6 @@ select {
   filter: drop-shadow(0 8px 12px rgb(11 22 15 / 24%));
 }
 
-.settings-button,
 .icon-button {
   display: grid;
   place-items: center;
@@ -84,36 +83,6 @@ select {
   color: #f4f6f1;
   background: rgb(26 38 30 / 88%);
   cursor: pointer;
-}
-
-.settings-button {
-  position: absolute;
-  top: 13px;
-  right: 12px;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(3px);
-  transition: opacity 120ms ease, transform 120ms ease;
-}
-
-.stage:hover .settings-button,
-.settings-button:focus-visible {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0);
-}
-
-.settings-button svg {
-  width: 17px;
-  height: 17px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.7;
 }
 
 .panel {
@@ -184,6 +153,43 @@ h1 {
 .settings-list {
   display: grid;
   gap: 2px;
+}
+
+.speed-setting {
+  display: grid;
+  gap: 5px;
+  padding: 8px 0 10px;
+  border-bottom: 1px solid rgb(229 239 221 / 9%);
+}
+
+.speed-setting-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #eef2eb;
+  font-size: 11px;
+}
+
+.speed-setting-label span {
+  color: #b8d3b3;
+  font-variant-numeric: tabular-nums;
+}
+
+.speed-setting small {
+  color: #91a195;
+  font-size: 9px;
+}
+
+.speed-slider {
+  width: 100%;
+  margin: 0;
+  accent-color: #a6c7a2;
+  cursor: pointer;
+}
+
+.speed-slider:disabled {
+  cursor: default;
+  opacity: 0.55;
 }
 
 .setting-row {
@@ -291,6 +297,21 @@ h1 {
   font-size: 10px;
 }
 
+.exit-button {
+  width: 100%;
+  margin-top: 4px;
+  padding: 5px;
+  border: 0;
+  color: #aa918d;
+  background: transparent;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.exit-button:hover {
+  color: #f2b8ad;
+}
+
 .primary-button:hover,
 .secondary-button:hover,
 .text-button:hover,
@@ -314,9 +335,9 @@ h1 {
 }
 
 @keyframes mori-sprite-x {
-  to { background-position-x: -400%; }
+  to { background-position-x: 133.333333%; }
 }
 
 @keyframes mori-sprite-y {
-  to { background-position-y: -400%; }
+  to { background-position-y: 133.333333%; }
 }

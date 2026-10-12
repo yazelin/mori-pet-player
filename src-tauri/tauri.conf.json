@@ -17,8 +17,8 @@
       {
         "label": "pet",
         "title": "Mori Pet Player",
-        "width": 260,
-        "height": 360,
+        "width": 184,
+        "height": 184,
         "resizable": false,
         "decorations": false,
         "transparent": true,

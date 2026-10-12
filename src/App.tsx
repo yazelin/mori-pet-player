@@ -30,6 +30,7 @@ type Pack = {
 
 type Settings = {
   wander: boolean;
+  wanderSpeedPercent: number;
   sleeping: boolean;
   sleepAfterMinutes: number;
   useWalking: boolean;
@@ -40,6 +41,7 @@ const SETTINGS_KEY = "mori-pet-player.settings.v1";
 const PACK_PATH_KEY = "mori-pet-player.last-pack-path";
 const DEFAULT_SETTINGS: Settings = {
   wander: true,
+  wanderSpeedPercent: 10,
   sleeping: true,
   sleepAfterMinutes: 1,
   useWalking: true,
@@ -147,7 +149,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const height = settingsOpen ? (pack ? 580 : 420) : WINDOW_EDGE;
+    const height = settingsOpen ? (pack ? 650 : 420) : WINDOW_EDGE;
     const width = settingsOpen ? 260 : WINDOW_EDGE;
     const appWindow = getCurrentWindow();
     void (async () => {
@@ -248,7 +250,11 @@ export default function App() {
       const fromY = currentPosition.y / factor;
       const toX = left + pad + Math.random() * Math.max(0, maxX - left - pad);
       const toY = top + pad + Math.random() * Math.max(0, maxY - top - pad);
-      const duration = 1_500;
+      const speedPercent = Math.min(
+        100,
+        Math.max(10, Number(settingsRef.current.wanderSpeedPercent) || 10),
+      );
+      const duration = 1_500 * (100 / speedPercent);
 
       setWalkLeft(toX < fromX);
       setIsWalking(true);
@@ -364,7 +370,8 @@ export default function App() {
         ? "sleeping"
         : "idle";
   const sprite = pack?.[visual] ?? pack?.idle;
-  const duration = pack?.durations_ms[visual] ?? pack?.durations_ms.idle ?? 3_000;
+  const manifestDuration = pack?.durations_ms[visual] ?? pack?.durations_ms.idle ?? 3_000;
+  const duration = manifestDuration;
   const spriteStyle = {
     backgroundImage: assetUrl(sprite),
     "--duration": `${duration}ms`,
@@ -384,22 +391,6 @@ export default function App() {
         onContextMenu={onContextMenu}
       >
         <div className={`sprite sprite-${visual}`} style={spriteStyle} />
-        <button
-          className="settings-button"
-          type="button"
-          title="開啟設定"
-          aria-label="開啟設定"
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={() => {
-            noteActivity();
-            setSettingsOpen((current) => !current);
-          }}
-        >
-          <svg aria-hidden="true" viewBox="0 0 24 24">
-            <path d="M12 8.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6Z" />
-            <path d="m19.4 13.5 1.3 1-1.5 2.6-1.6-.6a7.8 7.8 0 0 1-1.6.9l-.3 1.7h-3l-.3-1.7a7.8 7.8 0 0 1-1.6-.9l-1.6.6-1.5-2.6 1.3-1a7 7 0 0 1 0-1.9l-1.3-1 1.5-2.6 1.6.6a7.8 7.8 0 0 1 1.6-.9l.3-1.7h3l.3 1.7a7.8 7.8 0 0 1 1.6.9l1.6-.6 1.5 2.6-1.3 1a7 7 0 0 1 0 1.9Z" />
-          </svg>
-        </button>
       </section>
 
       {settingsOpen && (
@@ -412,9 +403,12 @@ export default function App() {
             <button
               type="button"
               className="icon-button"
-              title="結束程式"
-              aria-label="結束程式"
-              onClick={() => void getCurrentWindow().close()}
+              title="收起設定"
+              aria-label="收起設定"
+              onClick={() => {
+                noteActivity();
+                setSettingsOpen(false);
+              }}
             >
               ×
             </button>
@@ -442,6 +436,27 @@ export default function App() {
                     onChange={(event) => applySettings({ wander: event.currentTarget.checked })}
                   />
                 </label>
+
+                <div className="speed-setting">
+                  <div className="speed-setting-label">
+                    <strong>漫步速度</strong>
+                    <span>{settings.wanderSpeedPercent}%</span>
+                  </div>
+                  <input
+                    className="speed-slider"
+                    type="range"
+                    min={10}
+                    max={100}
+                    step={5}
+                    value={settings.wanderSpeedPercent}
+                    disabled={!settings.wander}
+                    aria-label="漫步速度"
+                    onChange={(event) =>
+                      applySettings({ wanderSpeedPercent: Number(event.currentTarget.value) })
+                    }
+                  />
+                  <small>10% 慢速 · 100% 原始速度</small>
+                </div>
 
                 <label className={`setting-row ${!pack.sleeping ? "setting-disabled" : ""}`}>
                   <span>
@@ -517,8 +532,15 @@ export default function App() {
               </div>
             </>
           )}
+          <button
+            type="button"
+            className="exit-button"
+            onClick={() => void getCurrentWindow().close()}
+          >
+            結束程式
+          </button>
           {error && <p role="alert" className="error-message">{error}</p>}
-          <p className="panel-hint">拖曳角色可移動；右鍵或點齒輪開啟設定。</p>
+          <p className="panel-hint">左鍵拖曳角色可移動；右鍵角色可開啟或收起設定。</p>
         </section>
       )}
     </main>
