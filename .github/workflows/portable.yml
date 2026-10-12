@@ -3,6 +3,7 @@ name: Build portable apps
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
@@ -104,3 +105,39 @@ jobs:
           name: Mori-Pet-Player-windows-x64-portable
           path: Mori-Pet-Player-windows-x64-portable.zip
           if-no-files-found: error
+
+  publish-release:
+    name: Publish portable downloads
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download platform builds
+        uses: actions/download-artifact@v4
+        with:
+          pattern: Mori-Pet-Player-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Prepare stable download filenames
+        shell: bash
+        run: |
+          linux_appimage="$(find release-assets -maxdepth 1 -type f -name '*.AppImage' -print -quit)"
+          test -n "$linux_appimage"
+          mv "$linux_appimage" release-assets/Mori-Pet-Player-linux-x64-portable.AppImage
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" \
+            release-assets/Mori-Pet-Player-linux-x64-portable.AppImage \
+            release-assets/Mori-Pet-Player-macos-arm64-portable.zip \
+            release-assets/Mori-Pet-Player-macos-x64-portable.zip \
+            release-assets/Mori-Pet-Player-windows-x64-portable.zip \
+            --title "Mori Pet Player $RELEASE_TAG" \
+            --generate-notes

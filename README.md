@@ -39,7 +39,9 @@ npm run tauri -- build --bundles app
 npm run tauri -- build --no-bundle
 ```
 
-GitHub Actions 會分別建置 Linux、macOS 與 Windows portable 成品，供工作流程下載。這個 repo 尚未設定對外發布。
+GitHub Actions 會分別建置 Linux、macOS 與 Windows portable 成品。推送 `v*` 版本標籤時會建立 GitHub Release，並附上四種作業系統成品。
+
+下載頁：[Mori Pet Player Portable 下載](https://yazelin.github.io/mori-pet-player/)。
 
 ## Portable 成品說明
 

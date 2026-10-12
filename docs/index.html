@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f3f6ed" />
+    <meta name="description" content="下載 Mori Pet Player，將 Mori Sprite Studio 匯出的 moripack 帶到 Linux、macOS 或 Windows 桌面上。" />
+    <title>Mori Pet Player — 桌面 Player 下載</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, "Noto Sans TC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #202c25;
+        background: #f3f6ed;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-width: 320px; }
+      a { color: inherit; }
+      .page { width: min(100% - 36px, 1040px); margin: 0 auto; padding: 26px 0 48px; }
+      .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 44px; }
+      .brand { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 700; text-decoration: none; }
+      .brand-mark { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid #cbdac8; border-radius: 12px; background: #e5efe1; color: #27634b; }
+      .top-link { color: #587261; font-size: 13px; text-decoration: none; }
+      .top-link:hover { color: #174b35; }
+      .hero { max-width: 700px; margin: 0 auto 34px; text-align: center; }
+      .eyebrow { color: #54785f; font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
+      h1 { margin: 13px 0 12px; font-size: clamp(32px, 6vw, 54px); line-height: 1.12; letter-spacing: -.04em; }
+      .lead { margin: 0 auto; max-width: 610px; color: #607267; font-size: 16px; line-height: 1.8; }
+      .steps { display: flex; flex-wrap: wrap; justify-content: center; gap: 9px; margin-top: 22px; }
+      .step { padding: 8px 12px; border: 1px solid #d9e2d5; border-radius: 999px; background: #ffffffa8; color: #56695d; font-size: 12px; }
+      .step b { color: #286247; margin-right: 5px; }
+      .downloads { padding: 26px; border: 1px solid #dce4d8; border-radius: 26px; background: #ffffffd9; box-shadow: 0 18px 50px #294b3210; }
+      .section-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; margin: 0 0 18px; }
+      h2 { margin: 0; font-size: 20px; letter-spacing: -.02em; }
+      .latest { color: #6b7b70; font-size: 12px; }
+      .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+      .card { display: flex; min-height: 190px; flex-direction: column; padding: 19px; border: 1px solid #e0e7dd; border-radius: 18px; background: #fbfcf9; }
+      .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+      .os { margin: 0; font-size: 17px; font-weight: 700; }
+      .arch { margin: 5px 0 0; color: #738077; font-size: 12px; }
+      .badge { padding: 5px 8px; border-radius: 999px; background: #eaf2e7; color: #3e6d4e; font-size: 10px; font-weight: 700; white-space: nowrap; }
+      .detail { flex: 1; margin: 14px 0 16px; color: #68766d; font-size: 12px; line-height: 1.7; }
+      .button { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 8px; padding: 0 14px; border: 1px solid #2c714e; border-radius: 12px; background: #2c714e; color: white; font-size: 13px; font-weight: 700; text-decoration: none; transition: background .15s, transform .15s; }
+      .button:hover { transform: translateY(-1px); background: #205b3d; }
+      .notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 16px 0 0; }
+      .note { padding: 16px; border: 1px solid #dfe7db; border-radius: 16px; background: #f9fbf7; }
+      .note h3 { margin: 0 0 7px; font-size: 13px; }
+      .note p { margin: 0; color: #6c7b71; font-size: 11px; line-height: 1.7; }
+      .how { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; margin-top: 16px; padding: 17px 20px; border-radius: 16px; background: #e9f0e5; }
+      .how p { margin: 0; color: #496351; font-size: 13px; line-height: 1.7; }
+      .how a { color: #205b3d; font-weight: 700; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+      footer { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px; margin-top: 26px; color: #718075; font-size: 12px; }
+      footer a { text-decoration: none; }
+      footer a:hover { color: #205b3d; }
+      @media (max-width: 640px) {
+        .page { width: min(100% - 24px, 520px); padding-top: 18px; }
+        .topbar { margin-bottom: 34px; }
+        .downloads { padding: 16px; border-radius: 21px; }
+        .grid { grid-template-columns: 1fr; }
+        .card { min-height: 170px; }
+        .notes { grid-template-columns: 1fr; }
+        .lead { font-size: 14px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <nav class="topbar" aria-label="主要導覽">
+        <a class="brand" href="https://mori-sprite-studio.vercel.app/">
+          <span class="brand-mark" aria-hidden="true">M</span>
+          <span>Mori Pet Player</span>
+        </a>
+        <a class="top-link" href="https://github.com/yazelin/mori-pet-player">查看原始碼 ↗</a>
+      </nav>
+
+      <header class="hero">
+        <div class="eyebrow">Mori Sprite Studio companion</div>
+        <h1>把角色帶到桌面上</h1>
+        <p class="lead">下載 Mori Pet Player，匯入 Studio 匯出的 <code>.moripack.zip</code>，讓角色在桌面散步、停留和睡覺，也能抓起來移動。</p>
+        <div class="steps" aria-label="使用步驟">
+          <span class="step"><b>01</b>匯出 moripack</span>
+          <span class="step"><b>02</b>下載對應系統版本</span>
+          <span class="step"><b>03</b>在 Player 匯入角色包</span>
+        </div>
+      </header>
+
+      <section class="downloads" aria-labelledby="download-title">
+        <div class="section-head">
+          <h2 id="download-title">下載桌面 Player</h2>
+          <span class="latest">以下連結會指向最新版本</span>
+        </div>
+        <div class="grid">
+          <article class="card">
+            <div class="card-top"><div><h3 class="os">Linux</h3><p class="arch">x64 · AppImage</p></div><span class="badge">免安裝</span></div>
+            <p class="detail">適用於 x64 Linux 桌面。需有 WebKitGTK 4.1 與 FUSE 支援。</p>
+            <a class="button" href="https://github.com/yazelin/mori-pet-player/releases/latest/download/Mori-Pet-Player-linux-x64-portable.AppImage">下載 Linux AppImage <span aria-hidden="true">↓</span></a>
+          </article>
+          <article class="card">
+            <div class="card-top"><div><h3 class="os">Windows</h3><p class="arch">x64 · ZIP</p></div><span class="badge">免安裝</span></div>
+            <p class="detail">解壓縮後執行 .exe。需要 Microsoft Edge WebView2 Runtime。</p>
+            <a class="button" href="https://github.com/yazelin/mori-pet-player/releases/latest/download/Mori-Pet-Player-windows-x64-portable.zip">下載 Windows ZIP <span aria-hidden="true">↓</span></a>
+          </article>
+          <article class="card">
+            <div class="card-top"><div><h3 class="os">macOS · Apple Silicon</h3><p class="arch">ARM64 · ZIP</p></div><span class="badge">免安裝</span></div>
+            <p class="detail">適用於 M1、M2、M3、M4 等 Apple Silicon Mac；ZIP 內含 .app。</p>
+            <a class="button" href="https://github.com/yazelin/mori-pet-player/releases/latest/download/Mori-Pet-Player-macos-arm64-portable.zip">下載 macOS ARM64 ZIP <span aria-hidden="true">↓</span></a>
+          </article>
+          <article class="card">
+            <div class="card-top"><div><h3 class="os">macOS · Intel</h3><p class="arch">x64 · ZIP</p></div><span class="badge">免安裝</span></div>
+            <p class="detail">適用於 Intel Mac；ZIP 內含 .app。首次開啟可能需要在「隱私權與安全性」允許。</p>
+            <a class="button" href="https://github.com/yazelin/mori-pet-player/releases/latest/download/Mori-Pet-Player-macos-x64-portable.zip">下載 macOS Intel ZIP <span aria-hidden="true">↓</span></a>
+          </article>
+        </div>
+
+        <div class="notes" aria-label="系統需求">
+          <article class="note"><h3>Linux</h3><p>目前提供 x64 AppImage。桌面環境仍可能影響透明視窗與漫步行為。</p></article>
+          <article class="note"><h3>Windows</h3><p>免安裝 Mori Desktop；若系統沒有 WebView2 Runtime，請先安裝它。</p></article>
+          <article class="note"><h3>macOS</h3><p>尚未簽章與公證。若首次開啟被系統阻擋，請到安全性設定允許開啟。</p></article>
+        </div>
+
+        <div class="how">
+          <p>先在 Mori Sprite Studio 完成角色動畫並匯出 <code>.moripack.zip</code>，再用下載的 Player 匯入。</p>
+          <a href="https://mori-sprite-studio.vercel.app/">開啟 Mori Sprite Studio ↗</a>
+        </div>
+      </section>
+
+      <footer>
+        <a href="https://github.com/yazelin/mori-pet-player/releases">所有版本</a>
+        <a href="https://github.com/yazelin/mori-pet-player">GitHub 專案</a>
+        <a href="https://mori-sprite-studio.vercel.app/">Mori Sprite Studio</a>
+      </footer>
+    </main>
+  </body>
+</html>
