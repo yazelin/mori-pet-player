@@ -26,6 +26,21 @@ type Pack = {
   walking: string | null;
   dragging: string | null;
   durations_ms: Record<string, number>;
+  custom_actions: CustomAction[];
+};
+
+type CustomAction = {
+  id: string;
+  display_name: string;
+  playback: "loop" | "one-shot";
+  duration_ms: number;
+  sprite: string;
+};
+
+type ActionTriggers = {
+  onClick: boolean;
+  idleAfterMinutes: number;
+  randomEveryMinutes: number;
 };
 
 type Settings = {
@@ -35,6 +50,7 @@ type Settings = {
   sleepAfterMinutes: number;
   useWalking: boolean;
   useDragging: boolean;
+  actionTriggers: Record<string, ActionTriggers>;
 };
 
 const SETTINGS_KEY = "mori-pet-player.settings.v1";
@@ -46,6 +62,12 @@ const DEFAULT_SETTINGS: Settings = {
   sleepAfterMinutes: 1,
   useWalking: true,
   useDragging: true,
+  actionTriggers: {},
+};
+const DEFAULT_ACTION_TRIGGERS: ActionTriggers = {
+  onClick: false,
+  idleAfterMinutes: 0,
+  randomEveryMinutes: 0,
 };
 const WINDOW_EDGE = 184;
 
@@ -53,7 +75,14 @@ function readSettings(): Settings {
   try {
     const saved = localStorage.getItem(SETTINGS_KEY);
     if (!saved) return DEFAULT_SETTINGS;
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+    const parsed = JSON.parse(saved) as Partial<Settings>;
+    return {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      actionTriggers: parsed.actionTriggers && typeof parsed.actionTriggers === "object"
+        ? parsed.actionTriggers
+        : {},
+    };
   } catch {
     return DEFAULT_SETTINGS;
   }
@@ -61,6 +90,23 @@ function readSettings(): Settings {
 
 function assetUrl(value: string | null | undefined): string | undefined {
   return value ? `url("data:image/png;base64,${value}")` : undefined;
+}
+
+function randomIntervalMs(minutes: number): number {
+  const average = Math.max(1, minutes) * 60_000;
+  return Math.round(average * (0.75 + Math.random() * 0.5));
+}
+
+function normalizeActionTriggers(value?: Partial<ActionTriggers>): ActionTriggers {
+  const idleAfterMinutes = typeof value?.idleAfterMinutes === "number"
+    && [1, 3, 5, 10, 20].includes(value.idleAfterMinutes)
+    ? value.idleAfterMinutes
+    : 0;
+  const randomEveryMinutes = typeof value?.randomEveryMinutes === "number"
+    && [2, 5, 10, 15, 30].includes(value.randomEveryMinutes)
+    ? value.randomEveryMinutes
+    : 0;
+  return { onClick: value?.onClick === true, idleAfterMinutes, randomEveryMinutes };
 }
 
 export default function App() {
@@ -72,6 +118,7 @@ export default function App() {
   const [walkLeft, setWalkLeft] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isSleeping, setIsSleeping] = useState(false);
+  const [activeAction, setActiveAction] = useState<{ id: string; token: number } | null>(null);
   const [error, setError] = useState("");
 
   const lastActivity = useRef(Date.now());
@@ -84,6 +131,11 @@ export default function App() {
   const isWalkingRef = useRef(isWalking);
   const isDraggingRef = useRef(isDragging);
   const isSleepingRef = useRef(isSleeping);
+  const activeActionRef = useRef(activeAction);
+  const actionTokenRef = useRef(0);
+  const idleActionsFiredRef = useRef(new Set<string>());
+  const randomDueAtRef = useRef<Record<string, { minutes: number; at: number }>>({});
+  const suppressClickRef = useRef(false);
 
   settingsRef.current = settings;
   packRef.current = pack;
@@ -91,15 +143,60 @@ export default function App() {
   isWalkingRef.current = isWalking;
   isDraggingRef.current = isDragging;
   isSleepingRef.current = isSleeping;
+  activeActionRef.current = activeAction;
 
   const noteActivity = () => {
     lastActivity.current = Date.now();
     setIsSleeping(false);
+    setActiveAction(null);
+    idleActionsFiredRef.current.clear();
   };
 
   const applySettings = (patch: Partial<Settings>) => {
     noteActivity();
     setSettings((current) => ({ ...current, ...patch }));
+  };
+
+  const triggersFor = (actionId: string) => normalizeActionTriggers(settings.actionTriggers[actionId]);
+
+  const updateActionTriggers = (actionId: string, patch: Partial<ActionTriggers>) => {
+    noteActivity();
+    setSettings((current) => ({
+      ...current,
+      actionTriggers: {
+        ...current.actionTriggers,
+        [actionId]: {
+          ...(current.actionTriggers[actionId] ?? DEFAULT_ACTION_TRIGGERS),
+          ...patch,
+        },
+      },
+    }));
+  };
+
+  const playCustomAction = (actionId: string, countAsActivity = true) => {
+    const action = packRef.current?.custom_actions.find((item) => item.id === actionId);
+    if (!action) return;
+    if (countAsActivity) noteActivity();
+    setIsWalking(false);
+    setIsSleeping(false);
+    setActiveAction({ id: actionId, token: ++actionTokenRef.current });
+  };
+
+  const onStageClick = () => {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
+    const hadAction = Boolean(activeActionRef.current);
+    noteActivity();
+    if (hadAction) return;
+    const candidates = (packRef.current?.custom_actions ?? []).filter(
+      (action) => normalizeActionTriggers(settingsRef.current.actionTriggers[action.id]).onClick,
+    );
+    if (candidates.length > 0) {
+      const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+      playCustomAction(chosen.id, false);
+    }
   };
 
   const loadPack = async (path: string) => {
@@ -109,6 +206,9 @@ export default function App() {
       setPack(loaded);
       setIsWalking(false);
       setIsSleeping(false);
+      setActiveAction(null);
+      idleActionsFiredRef.current.clear();
+      randomDueAtRef.current = {};
       setSettingsOpen(false);
       lastActivity.current = Date.now();
       localStorage.setItem(PACK_PATH_KEY, path);
@@ -138,6 +238,17 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   }, [settings]);
+
+  useEffect(() => {
+    if (!activeAction) return;
+    const action = pack?.custom_actions.find((item) => item.id === activeAction.id);
+    if (!action || action.playback === "loop") return;
+    const token = activeAction.token;
+    const timeout = window.setTimeout(() => {
+      setActiveAction((current) => current?.token === token ? null : current);
+    }, action.duration_ms);
+    return () => window.clearTimeout(timeout);
+  }, [activeAction, pack]);
 
   useEffect(() => {
     if (!savedPath) return;
@@ -195,11 +306,75 @@ export default function App() {
         inactiveLongEnough &&
           !isDraggingRef.current &&
           !isWalkingRef.current &&
+          !activeActionRef.current &&
           !settingsOpenRef.current,
       );
     }, 1_000);
     return () => window.clearInterval(interval);
   }, [settings.sleeping, settings.sleepAfterMinutes, pack?.sleeping]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      const currentPack = packRef.current;
+      const currentSettings = settingsRef.current;
+      if (
+        !currentPack || settingsOpenRef.current || isDraggingRef.current ||
+        isWalkingRef.current || activeActionRef.current
+      ) return;
+
+      const now = Date.now();
+      const idleFor = now - lastActivity.current;
+      const idleReady: CustomAction[] = [];
+      const randomReady: CustomAction[] = [];
+      for (const action of currentPack.custom_actions) {
+        const trigger = normalizeActionTriggers(currentSettings.actionTriggers[action.id]);
+        if (trigger.idleAfterMinutes > 0 && !idleActionsFiredRef.current.has(action.id)
+          && idleFor >= trigger.idleAfterMinutes * 60_000) {
+          idleReady.push(action);
+        }
+        if (trigger.randomEveryMinutes <= 0) {
+          delete randomDueAtRef.current[action.id];
+          continue;
+        }
+        const schedule = randomDueAtRef.current[action.id];
+        if (!schedule || schedule.minutes !== trigger.randomEveryMinutes) {
+          randomDueAtRef.current[action.id] = {
+            minutes: trigger.randomEveryMinutes,
+            at: now + randomIntervalMs(trigger.randomEveryMinutes),
+          };
+        } else if (now >= schedule.at) {
+          randomReady.push(action);
+        }
+      }
+
+      if (idleReady.length > 0) {
+        for (const action of idleReady) idleActionsFiredRef.current.add(action.id);
+        for (const action of randomReady) {
+          const trigger = normalizeActionTriggers(currentSettings.actionTriggers[action.id]);
+          randomDueAtRef.current[action.id] = {
+            minutes: trigger.randomEveryMinutes,
+            at: now + randomIntervalMs(trigger.randomEveryMinutes),
+          };
+        }
+        const chosen = idleReady[Math.floor(Math.random() * idleReady.length)];
+        playCustomAction(chosen.id, false);
+        return;
+      }
+
+      if (randomReady.length > 0) {
+        for (const action of randomReady) {
+          const trigger = normalizeActionTriggers(currentSettings.actionTriggers[action.id]);
+          randomDueAtRef.current[action.id] = {
+            minutes: trigger.randomEveryMinutes,
+            at: now + randomIntervalMs(trigger.randomEveryMinutes),
+          };
+        }
+        const chosen = randomReady[Math.floor(Math.random() * randomReady.length)];
+        playCustomAction(chosen.id, false);
+      }
+    }, 1_000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -216,7 +391,8 @@ export default function App() {
         Boolean(packRef.current) &&
         !settingsOpenRef.current &&
         !isDraggingRef.current &&
-        !isSleepingRef.current
+        !isSleepingRef.current &&
+        !activeActionRef.current
       );
     };
 
@@ -324,6 +500,7 @@ export default function App() {
   const beginDragging = async () => {
     if (isDraggingRef.current) return;
     isDraggingRef.current = true;
+    suppressClickRef.current = true;
     noteActivity();
     setIsWalking(false);
     setIsDragging(true);
@@ -341,6 +518,7 @@ export default function App() {
 
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0 || (event.target as HTMLElement).closest("button")) return;
+    suppressClickRef.current = false;
     dragStart.current = { x: event.clientX, y: event.clientY };
   };
 
@@ -369,9 +547,11 @@ export default function App() {
       : isSleeping && settings.sleeping && pack?.sleeping
         ? "sleeping"
         : "idle";
-  const sprite = pack?.[visual] ?? pack?.idle;
-  const manifestDuration = pack?.durations_ms[visual] ?? pack?.durations_ms.idle ?? 3_000;
-  const duration = manifestDuration;
+  const selectedAction = activeAction
+    ? pack?.custom_actions.find((item) => item.id === activeAction.id) ?? null
+    : null;
+  const sprite = selectedAction?.sprite ?? pack?.[visual] ?? pack?.idle;
+  const duration = selectedAction?.duration_ms ?? pack?.durations_ms[visual] ?? pack?.durations_ms.idle ?? 3_000;
   const spriteStyle = {
     backgroundImage: assetUrl(sprite),
     "--duration": `${duration}ms`,
@@ -384,13 +564,20 @@ export default function App() {
       <section
         className="stage"
         aria-label={pack ? `${pack.display_name} 桌面夥伴` : "Mori 桌面夥伴"}
+        onClick={onStageClick}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={finishDragging}
         onPointerCancel={finishDragging}
         onContextMenu={onContextMenu}
       >
-        <div className={`sprite sprite-${visual}`} style={spriteStyle} />
+        <div
+          key={activeAction ? `action-${activeAction.token}` : visual}
+          className={`sprite ${selectedAction
+            ? `sprite-custom-action${selectedAction.playback === "one-shot" ? " sprite-once" : ""}`
+            : `sprite-${visual}`}`}
+          style={spriteStyle}
+        />
       </section>
 
       {settingsOpen && (
@@ -513,6 +700,62 @@ export default function App() {
                     onChange={(event) => applySettings({ useDragging: event.currentTarget.checked })}
                   />
                 </label>
+
+                {pack.custom_actions.length > 0 && (
+                  <div className="custom-action-settings">
+                    <div className="custom-action-heading">
+                      <strong>自訂動作</strong>
+                      <small>觸發條件存在這台電腦</small>
+                    </div>
+                    {pack.custom_actions.map((action) => {
+                      const trigger = triggersFor(action.id);
+                      const isActive = activeAction?.id === action.id;
+                      return (
+                        <div className="custom-action-row" key={action.id}>
+                          <div className="custom-action-title">
+                            <strong>{action.display_name}</strong>
+                            <button
+                              type="button"
+                              className="action-play-button"
+                              onClick={() => isActive ? noteActivity() : playCustomAction(action.id)}
+                            >
+                              {isActive ? "停止" : "播放"}
+                            </button>
+                          </div>
+                          <label className="action-trigger-row">
+                            <span>點擊 Mori 時播放</span>
+                            <input
+                              type="checkbox"
+                              checked={trigger.onClick}
+                              onChange={(event) => updateActionTriggers(action.id, { onClick: event.currentTarget.checked })}
+                            />
+                          </label>
+                          <label className="action-trigger-row">
+                            <span>閒置多久後播放</span>
+                            <select
+                              value={trigger.idleAfterMinutes}
+                              onChange={(event) => updateActionTriggers(action.id, { idleAfterMinutes: Number(event.currentTarget.value) })}
+                            >
+                              <option value={0}>關閉</option>
+                              {[1, 3, 5, 10, 20].map((minutes) => <option key={minutes} value={minutes}>{minutes} 分鐘</option>)}
+                            </select>
+                          </label>
+                          <label className="action-trigger-row">
+                            <span>隨機間隔播放</span>
+                            <select
+                              value={trigger.randomEveryMinutes}
+                              onChange={(event) => updateActionTriggers(action.id, { randomEveryMinutes: Number(event.currentTarget.value) })}
+                            >
+                              <option value={0}>關閉</option>
+                              {[2, 5, 10, 15, 30].map((minutes) => <option key={minutes} value={minutes}>約 {minutes} 分鐘</option>)}
+                            </select>
+                          </label>
+                        </div>
+                      );
+                    })}
+                    <p className="custom-action-hint">多個動作同時符合條件時，Player 會隨機挑一個。自動觸發會在設定面板關閉、角色沒有被拖曳或漫步時播放。</p>
+                  </div>
+                )}
               </div>
 
               <div className="panel-actions">

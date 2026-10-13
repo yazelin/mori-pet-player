@@ -6,10 +6,12 @@
 
 ## 目前功能
 
-- 讀取 MoriPack v1 的 `sprites/idle.png`，並支援選用 `sleeping.png`、`walking.png`、`dragging.png`。
+- 讀取 MoriPack schema 1.x 的角色包：使用 `idle.png`，支援 `sleeping.png`、`walking.png`、`dragging.png`；也讀取 Studio 匯出的自訂動作。
 - 每隔一段時間在目前螢幕隨機漫步；可在設定中關閉。
 - 可設定閒置多久後播放 sleeping；使用者互動時會喚醒。
 - 角色包沒有 walking 或 dragging 時，對應動作使用 idle。
+- 自訂動作可以手動播放，並可各自設定點擊 Mori、閒置一段時間或隨機間隔觸發；觸發條件存在本機，不會寫入角色包。
+- 舊版沒有 `custom_actions` 欄位的 MoriPack 仍可正常匯入。
 - 匯入檔案路徑與小程式設定會記住，下一次啟動會載入上次的角色包。
 - Linux AppImage、macOS `.app` ZIP、Windows 免安裝 ZIP 的跨平台打包流程。
 
@@ -19,7 +21,7 @@
 
 1. 啟動程式後匯入 Studio 匯出的 `.moripack.zip`。
 2. 用滑鼠拖曳角色即可移動牠。
-3. 點角色旁的齒輪或在角色上按右鍵，開啟漫步、睡眠和動畫設定。
+3. 在角色上按右鍵，開啟漫步、睡眠和自訂動作觸發設定。
 4. 從設定面板可以更換角色包或結束程式。
 
 ## 開發

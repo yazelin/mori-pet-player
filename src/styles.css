@@ -76,6 +76,12 @@ select {
   filter: drop-shadow(0 8px 12px rgb(11 22 15 / 24%));
 }
 
+.sprite-once {
+  animation-name: mori-sprite-x-once, mori-sprite-y-once;
+  animation-iteration-count: 4, 1;
+  animation-fill-mode: forwards, forwards;
+}
+
 .icon-button {
   display: grid;
   place-items: center;
@@ -255,6 +261,97 @@ h1 {
   opacity: 0.5;
 }
 
+.custom-action-settings {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid rgb(229 239 221 / 14%);
+}
+
+.custom-action-heading {
+  display: grid;
+  gap: 3px;
+}
+
+.custom-action-heading strong {
+  color: #eef2eb;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.custom-action-heading small,
+.custom-action-hint {
+  color: #91a195;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.custom-action-row {
+  display: grid;
+  gap: 5px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgb(229 239 221 / 9%);
+}
+
+.custom-action-title,
+.action-trigger-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.custom-action-title strong {
+  overflow: hidden;
+  color: #e8eee6;
+  font-size: 10px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.action-trigger-row span {
+  color: #b9c5ba;
+  font-size: 9px;
+}
+
+.action-trigger-row input[type="checkbox"] {
+  width: 13px;
+  height: 13px;
+  accent-color: #a6c7a2;
+  flex: 0 0 auto;
+}
+
+.action-trigger-row select {
+  max-width: 112px;
+  border: 1px solid rgb(229 239 221 / 16%);
+  border-radius: 7px;
+  padding: 4px 5px;
+  color: #e9eee6;
+  background: #26352b;
+  font-size: 9px;
+}
+
+.action-play-button {
+  border: 1px solid rgb(166 199 162 / 35%);
+  border-radius: 7px;
+  padding: 4px 8px;
+  color: #e8f2e3;
+  background: rgb(93 130 95 / 22%);
+  font-size: 9px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.action-play-button:hover {
+  background: rgb(93 130 95 / 38%);
+}
+
+.custom-action-hint {
+  margin: 0;
+}
+
 .panel-actions {
   display: flex;
   align-items: center;
@@ -340,4 +437,12 @@ h1 {
 
 @keyframes mori-sprite-y {
   to { background-position-y: 133.333333%; }
+}
+
+@keyframes mori-sprite-x-once {
+  to { background-position-x: 100%; }
+}
+
+@keyframes mori-sprite-y-once {
+  to { background-position-y: 100%; }
 }

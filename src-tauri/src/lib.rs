@@ -1,4 +1,9 @@
-use std::{collections::HashMap, fs::File, io::Read, path::Path};
+use std::{
+    collections::{HashMap, HashSet},
+    fs::File,
+    io::Read,
+    path::Path,
+};
 
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use serde::{Deserialize, Serialize};
@@ -7,6 +12,9 @@ use zip::ZipArchive;
 const PNG_SIGNATURE: &[u8; 8] = b"\x89PNG\r\n\x1a\n";
 const MAX_MANIFEST_BYTES: u64 = 1024 * 1024;
 const MAX_SPRITE_BYTES: u64 = 32 * 1024 * 1024;
+const MAX_CUSTOM_ACTION_BYTES: u64 = 16 * 1024 * 1024;
+const MAX_CUSTOM_ACTION_TOTAL_BYTES: u64 = 64 * 1024 * 1024;
+const MAX_CUSTOM_ACTIONS: usize = 20;
 
 #[derive(Debug, Deserialize)]
 struct Manifest {
@@ -16,6 +24,26 @@ struct Manifest {
     display_name: String,
     #[serde(default)]
     loop_durations_ms: HashMap<String, u64>,
+    #[serde(default)]
+    custom_actions: Vec<ManifestCustomAction>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ManifestCustomAction {
+    id: String,
+    display_name: String,
+    playback: String,
+    duration_ms: u64,
+    sprite_path: String,
+}
+
+#[derive(Debug, Serialize)]
+struct LoadedCustomAction {
+    id: String,
+    display_name: String,
+    playback: String,
+    duration_ms: u64,
+    sprite: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -27,6 +55,7 @@ struct LoadedPack {
     walking: Option<String>,
     dragging: Option<String>,
     durations_ms: HashMap<String, u64>,
+    custom_actions: Vec<LoadedCustomAction>,
 }
 
 fn read_entry(
@@ -92,6 +121,60 @@ fn duration_for(manifest: &Manifest, state: &str, fallback: u64) -> u64 {
         .unwrap_or(fallback)
 }
 
+fn load_custom_actions(
+    archive: &mut ZipArchive<File>,
+    actions: &[ManifestCustomAction],
+) -> Result<Vec<LoadedCustomAction>, String> {
+    if actions.len() > MAX_CUSTOM_ACTIONS {
+        return Err(format!("自訂動作最多支援 {MAX_CUSTOM_ACTIONS} 個"));
+    }
+    let mut ids = HashSet::new();
+    let mut total_bytes = 0_u64;
+    let mut loaded = Vec::with_capacity(actions.len());
+    for action in actions {
+        let id_ok = !action.id.is_empty()
+            && action.id.len() <= 48
+            && action.id.bytes().enumerate().all(|(index, byte)| {
+                byte.is_ascii_lowercase()
+                    || byte.is_ascii_digit()
+                    || (index > 0 && matches!(byte, b'_' | b'-'))
+            });
+        if !id_ok {
+            return Err(format!("自訂動作識別碼格式不正確：{}", action.id));
+        }
+        if !ids.insert(action.id.clone()) {
+            return Err(format!("自訂動作識別碼重複：{}", action.id));
+        }
+        if action.display_name.trim().is_empty() || action.display_name.chars().count() > 64 {
+            return Err(format!("自訂動作名稱無效：{}", action.id));
+        }
+        if action.playback != "loop" && action.playback != "one-shot" {
+            return Err(format!("自訂動作播放方式無效：{}", action.id));
+        }
+        if !(250..=60_000).contains(&action.duration_ms) {
+            return Err(format!("自訂動作播放時間超出範圍：{}", action.id));
+        }
+
+        let path = format!("sprites/actions/{}.png", action.id);
+        if action.sprite_path != path {
+            return Err(format!("自訂動作圖片路徑不正確：{}", action.id));
+        }
+        let bytes = read_entry(archive, &path, MAX_CUSTOM_ACTION_BYTES)?;
+        total_bytes = total_bytes.saturating_add(bytes.len() as u64);
+        if total_bytes > MAX_CUSTOM_ACTION_TOTAL_BYTES {
+            return Err("自訂動作圖片總大小超過 64 MiB".into());
+        }
+        loaded.push(LoadedCustomAction {
+            id: action.id.clone(),
+            display_name: action.display_name.trim().to_string(),
+            playback: action.playback.clone(),
+            duration_ms: action.duration_ms,
+            sprite: encode_sprite(bytes, &path)?,
+        });
+    }
+    Ok(loaded)
+}
+
 fn load_moripack(path: String) -> Result<LoadedPack, String> {
     let file = File::open(&path).map_err(|error| format!("無法開啟角色包：{error}"))?;
     let mut archive =
@@ -128,6 +211,7 @@ fn load_moripack(path: String) -> Result<LoadedPack, String> {
     let dragging = read_optional_entry(&mut archive, "sprites/dragging.png")?
         .map(|bytes| encode_sprite(bytes, "sprites/dragging.png"))
         .transpose()?;
+    let custom_actions = load_custom_actions(&mut archive, &manifest.custom_actions)?;
 
     let mut durations_ms = HashMap::new();
     for (state, fallback) in [
@@ -153,6 +237,7 @@ fn load_moripack(path: String) -> Result<LoadedPack, String> {
         walking,
         dragging,
         durations_ms,
+        custom_actions,
     })
 }
 
