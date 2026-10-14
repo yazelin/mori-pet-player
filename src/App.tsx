@@ -70,7 +70,7 @@ const DEFAULT_ACTION_TRIGGERS: ActionTriggers = {
   idleAfterMinutes: 0,
   randomEveryMinutes: 0,
 };
-const WINDOW_EDGE = 184;
+const WINDOW_EDGE = 224;
 
 function readSettings(): Settings {
   try {

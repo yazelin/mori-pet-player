@@ -33,8 +33,8 @@ select {
 }
 
 .player {
-  width: 184px;
-  min-height: 184px;
+  width: 224px;
+  min-height: 224px;
   margin: 0 auto;
   padding: 0;
 }
@@ -47,8 +47,8 @@ select {
 .stage {
   position: relative;
   display: grid;
-  width: 184px;
-  height: 184px;
+  width: 224px;
+  height: 224px;
   place-items: center;
   margin: 0 auto;
   cursor: grab;
@@ -511,9 +511,33 @@ h1 {
 }
 
 @keyframes mori-sprite-x-once {
-  to { background-position-x: 100%; }
+  0% {
+    background-position-x: 0%;
+    animation-timing-function: steps(1, end);
+  }
+  25% {
+    background-position-x: 33.333333%;
+    animation-timing-function: steps(1, end);
+  }
+  50% {
+    background-position-x: 66.666667%;
+    animation-timing-function: steps(1, end);
+  }
+  75%, 100% { background-position-x: 100%; }
 }
 
 @keyframes mori-sprite-y-once {
-  to { background-position-y: 100%; }
+  0% {
+    background-position-y: 0%;
+    animation-timing-function: steps(1, end);
+  }
+  25% {
+    background-position-y: 33.333333%;
+    animation-timing-function: steps(1, end);
+  }
+  50% {
+    background-position-y: 66.666667%;
+    animation-timing-function: steps(1, end);
+  }
+  75%, 100% { background-position-y: 100%; }
 }
