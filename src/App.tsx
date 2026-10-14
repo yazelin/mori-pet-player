@@ -15,6 +15,7 @@ import {
   primaryMonitor,
 } from "@tauri-apps/api/window";
 import { open } from "@tauri-apps/plugin-dialog";
+import { SettingSelect } from "./SettingSelect";
 
 type VisualState = "idle" | "sleeping" | "walking" | "dragging";
 
@@ -658,22 +659,16 @@ export default function App() {
                   />
                 </label>
 
-                <label className="setting-row sub-setting">
+                <div className="setting-row sub-setting">
                   <span>閒置多久後睡著</span>
-                  <select
+                  <SettingSelect
                     value={settings.sleepAfterMinutes}
                     disabled={!settings.sleeping || !pack.sleeping}
-                    onChange={(event) =>
-                      applySettings({ sleepAfterMinutes: Number(event.currentTarget.value) })
-                    }
-                  >
-                    {[1, 3, 5, 10].map((minutes) => (
-                      <option key={minutes} value={minutes}>
-                        {minutes} 分鐘
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    ariaLabel="閒置多久後睡著"
+                    options={[1, 3, 5, 10].map((minutes) => ({ value: minutes, label: `${minutes} 分鐘` }))}
+                    onChange={(sleepAfterMinutes) => applySettings({ sleepAfterMinutes })}
+                  />
+                </div>
 
                 <label className={`setting-row compact-row ${!pack.walking ? "setting-disabled" : ""}`}>
                   <span>
@@ -730,26 +725,30 @@ export default function App() {
                               onChange={(event) => updateActionTriggers(action.id, { onClick: event.currentTarget.checked })}
                             />
                           </label>
-                          <label className="action-trigger-row">
+                          <div className="action-trigger-row">
                             <span>閒置多久後播放</span>
-                            <select
+                            <SettingSelect
                               value={trigger.idleAfterMinutes}
-                              onChange={(event) => updateActionTriggers(action.id, { idleAfterMinutes: Number(event.currentTarget.value) })}
-                            >
-                              <option value={0}>關閉</option>
-                              {[1, 3, 5, 10, 20].map((minutes) => <option key={minutes} value={minutes}>{minutes} 分鐘</option>)}
-                            </select>
-                          </label>
-                          <label className="action-trigger-row">
+                              ariaLabel={`${action.display_name} 閒置多久後播放`}
+                              options={[
+                                { value: 0, label: "關閉" },
+                                ...[1, 3, 5, 10, 20].map((minutes) => ({ value: minutes, label: `${minutes} 分鐘` })),
+                              ]}
+                              onChange={(idleAfterMinutes) => updateActionTriggers(action.id, { idleAfterMinutes })}
+                            />
+                          </div>
+                          <div className="action-trigger-row">
                             <span>隨機間隔播放</span>
-                            <select
+                            <SettingSelect
                               value={trigger.randomEveryMinutes}
-                              onChange={(event) => updateActionTriggers(action.id, { randomEveryMinutes: Number(event.currentTarget.value) })}
-                            >
-                              <option value={0}>關閉</option>
-                              {[2, 5, 10, 15, 30].map((minutes) => <option key={minutes} value={minutes}>約 {minutes} 分鐘</option>)}
-                            </select>
-                          </label>
+                              ariaLabel={`${action.display_name} 隨機間隔播放`}
+                              options={[
+                                { value: 0, label: "關閉" },
+                                ...[2, 5, 10, 15, 30].map((minutes) => ({ value: minutes, label: `約 ${minutes} 分鐘` })),
+                              ]}
+                              onChange={(randomEveryMinutes) => updateActionTriggers(action.id, { randomEveryMinutes })}
+                            />
+                          </div>
                         </div>
                       );
                     })}
